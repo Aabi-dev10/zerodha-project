@@ -107,10 +107,9 @@ const LoginView = () => {
       const { success, message } = data;
       if (success) {
         handleSuccess(message);
-        // 💡 UPDATED: Added a slightly larger delay (1.5s) and switched to window.location.replace
-        // This stops history looping and gives the secure cross-domain cookie time to write to browser memory
+        // 💡 UPDATED: Pass the token safely in the URL parameter parameter string
         setTimeout(() => {
-          window.location.replace(DASHBOARD_URL); 
+          window.location.replace(`${DASHBOARD_URL}?token=${data.token}`); 
         }, 1500);
       } else {
         handleError(message);
@@ -216,9 +215,9 @@ const SignupView = () => {
       const { success, message } = data;
       if (success) {
         handleSuccess(message);
-        // 💡 UPDATED: Added a slightly larger delay (1.5s) and switched to window.location.replace
+        // 💡 UPDATED: Pass the token safely in the URL parameter parameter string
         setTimeout(() => {
-          window.location.replace(DASHBOARD_URL); 
+          window.location.replace(`${DASHBOARD_URL}?token=${data.token}`); 
         }, 1500);
       } else {
         handleError(message);

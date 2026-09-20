@@ -1,21 +1,23 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useCookies } from "react-cookie";
-import axios from "axios";
+import axios from "ajax";
 
 import Dashboard from "./Dashboard.jsx"; 
 
-// 💡 ADDED: Set withCredentials globally so Axios forces the browser to send cross-domain cookies
+// Set withCredentials globally so Axios forces the browser to send cross-domain cookies
 axios.defaults.withCredentials = true;
 
-// 💡 UPDATED: Clean out any loose slashes from your environment variables automatically
+// Clean out any loose slashes from your environment variables automatically
 const BACKEND_URL = (import.meta.env.VITE_API_URL || "http://localhost:8080").replace(/\/\$/, "");
 const FRONTEND_URL = (import.meta.env.VITE_FRONTEND_URL || "http://localhost:5173").replace(/\/\$/, "");
 
 const Home = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [cookies, removeCookie] = useCookies(["token"]);
+  
+  // 💡 UPDATED: Added setCookie here so we can write the crossed-over token locally
+  const [cookies, setCookie, removeCookie] = useCookies(["token"]);
   const [loading, setLoading] = useState(true);
   
   const [username, setUsername] = useState("");
@@ -23,16 +25,34 @@ const Home = () => {
   
   useEffect(() => {
     const verifyUserSession = async () => {
-      // If the browser hasn't registered the cross-domain cookie yet, fallback gracefully
-      if (!cookies.token) {
-        console.log("No cookie found locally, checking with server fallback...");
+      // 1. 💡 ADDED: Check if a token was passed through the secure URL parameter string
+      const urlParams = new URLSearchParams(window.location.search);
+      const tokenFromUrl = urlParams.get("token");
+
+      if (tokenFromUrl) {
+        // Securely capture and save the token inside the dashboard's local domain memory
+        setCookie("token", tokenFromUrl, { 
+          path: "/", 
+          sameSite: "none", 
+          secure: true, // Crucial for production HTTPS on Render
+          maxAge: 24 * 60 * 60 
+        });
+        
+        // Wipe the token parameter from the address bar instantly for visual neatness
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+
+      // 2. Safety lock: If there's no local cookie and no fresh link token, redirect back to login
+      if (!cookies.token && !tokenFromUrl) {
+        window.location.href = `${FRONTEND_URL}/login`;
+        return;
       }
     
       try {
         const { data } = await axios.post(
           `${BACKEND_URL}/`, 
           {},
-          { withCredentials: true } // Double enforce credentials tracking
+          { withCredentials: true } 
         );
         
         const { status, user } = data;
@@ -98,7 +118,8 @@ const Home = () => {
           <div className={`nav-links-menu-box ${isMenuOpen ? "mobile-open" : ""}`}>
             <Link to="/" className={getLinkClass("/")} onClick={handleNavClick}>Dashboard</Link>
             <Link to="/orders" className={getLinkClass("/orders")} onClick={handleNavClick}>Orders</Link>
-            <Link to="/holdings" className={getLinkClass("/holdings")} onClick={handleNavClick}/></Link>            <Link to="/positions" className={getLinkClass("/positions")} onClick={handleNavClick}>Positions</Link>
+            <Link to="/holdings" className={getLinkClass("/holdings")} onClick={handleNavClick}>Holdings</Link>
+            <Link to="/positions" className={getLinkClass("/positions")} onClick={handleNavClick}>Positions</Link>
             <Link to="/funds" className={getLinkClass("/funds")} onClick={handleNavClick}>Funds</Link>
             <Link to="/apps" className={getLinkClass("/apps")} onClick={handleNavClick}>Apps</Link>
             <span className="nav-username-display">

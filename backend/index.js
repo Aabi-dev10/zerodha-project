@@ -16,6 +16,8 @@ const authRoute  = require("./Routes/AuthRoute.js");
 const PORT = process.env.PORT || 8080;
 const uri = process.env.MONGO_URL;
 const ALLOWED_ORIGINS = [
+  process.env.FRONTEND_URL, 
+  process.env.DASHBOARD_URL, 
   "http://localhost:5174", 
   "http://localhost:5173"  
 ];

@@ -3,7 +3,9 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useCookies } from "react-cookie";
 import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
-const BACKEND_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+
+// Helper to strip any accidentally appended trailing slashes
+const BACKEND_URL = (import.meta.env.VITE_API_URL || "http://localhost:8080").replace(/\/\$/, "");
 const DASHBOARD_URL = import.meta.env.VITE_DASHBOARD_URL || "http://localhost:5174/";
 
 // Main wrapper component
@@ -105,9 +107,11 @@ const LoginView = () => {
       const { success, message } = data;
       if (success) {
         handleSuccess(message);
+        // 💡 UPDATED: Added a slightly larger delay (1.5s) and switched to window.location.replace
+        // This stops history looping and gives the secure cross-domain cookie time to write to browser memory
         setTimeout(() => {
-          window.location.href = DASHBOARD_URL; 
-        }, 1000);
+          window.location.replace(DASHBOARD_URL); 
+        }, 1500);
       } else {
         handleError(message);
       }
@@ -212,9 +216,10 @@ const SignupView = () => {
       const { success, message } = data;
       if (success) {
         handleSuccess(message);
+        // 💡 UPDATED: Added a slightly larger delay (1.5s) and switched to window.location.replace
         setTimeout(() => {
-          window.location.href = DASHBOARD_URL; 
-        }, 1000);
+          window.location.replace(DASHBOARD_URL); 
+        }, 1500);
       } else {
         handleError(message);
       }

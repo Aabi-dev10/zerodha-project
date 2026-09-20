@@ -3,6 +3,8 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useCookies } from "react-cookie";
 import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
+const BACKEND_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+const DASHBOARD_URL = import.meta.env.VITE_DASHBOARD_URL || "http://localhost:5174/";
 
 // Main wrapper component
 const AuthManager = () => {
@@ -32,7 +34,7 @@ const OpenAccountView = () => {
       
       try {
         const { data } = await axios.post(
-          "http://localhost:8080/",
+          `${BACKEND_URL}/`, 
           {},
           { withCredentials: true }
         );
@@ -69,6 +71,7 @@ const OpenAccountView = () => {
     </>
   );
 };
+
 // VIEW 2: NEW! LOGIN FORM
 const LoginView = () => {
   const navigate = useNavigate();
@@ -90,11 +93,11 @@ const LoginView = () => {
   const handleError = (err) => toast.error(err, { position: "bottom-left" });
   const handleSuccess = (msg) => toast.success(msg, { position: "bottom-right" });
 
-    const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const { data } = await axios.post(
-        "http://localhost:8080/login",
+        `${BACKEND_URL}/login`, 
         { ...inputValue },
         { withCredentials: true }
       );
@@ -103,7 +106,7 @@ const LoginView = () => {
       if (success) {
         handleSuccess(message);
         setTimeout(() => {
-          window.location.href = "http://localhost:5174/";
+          window.location.href = DASHBOARD_URL; 
         }, 1000);
       } else {
         handleError(message);
@@ -129,7 +132,6 @@ const LoginView = () => {
       <div>
         <h2>Login to Account</h2>
         <form onSubmit={handleSubmit}>
-          
           <div className="mb-3">
             <label className="form-label p-2 fs-6" htmlFor="emailInput">
               Email:
@@ -175,6 +177,7 @@ const LoginView = () => {
     </div>
   );
 };
+
 // VIEW 3: SIGNUP FORM
 const SignupView = () => {
   const navigate = useNavigate();
@@ -197,12 +200,11 @@ const SignupView = () => {
   const handleError = (err) => toast.error(err, { position: "bottom-left" });
   const handleSuccess = (msg) => toast.success(msg, { position: "bottom-right" });
 
-  
-     const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const { data } = await axios.post(
-        "http://localhost:8080/signup",
+        `${BACKEND_URL}/signup`, 
         { ...inputValue },
         { withCredentials: true }
       );
@@ -211,7 +213,7 @@ const SignupView = () => {
       if (success) {
         handleSuccess(message);
         setTimeout(() => {
-          window.location.href = "http://localhost:5174/"; 
+          window.location.href = DASHBOARD_URL; 
         }, 1000);
       } else {
         handleError(message);
@@ -237,7 +239,6 @@ const SignupView = () => {
       <div>
         <h2>Signup Account</h2>
         <form onSubmit={handleSubmit}>
-          
           <div className="mb-3">
             <label className="form-label p-2 fs-6" htmlFor="emailInput">
               Email:

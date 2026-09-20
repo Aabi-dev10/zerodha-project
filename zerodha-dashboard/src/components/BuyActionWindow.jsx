@@ -3,30 +3,35 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import GeneralContext from "./GeneralContext.jsx"; 
 import "./BuyActionWindow.css";
+
 const BuyActionWindow = ({ uid }) => {
   const [stockQuantity, setStockQuantity] = useState(1);
   const [stockPrice, setStockPrice] = useState(0.0);
-    const { closeBuyWindow } = useContext(GeneralContext);
+  const { closeBuyWindow } = useContext(GeneralContext);
   const navigate = useNavigate();
+
   const handleBuyClick = async (e) => {
     e.preventDefault(); 
     try {
+      // Reads your deployed Render URL from the .env file; defaults to localhost if empty
+      const baseURL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+
       await axios.post(
-        "http://localhost:8080/newOrder", 
+        `${baseURL}/newOrder`, // 👈 Updated to live Render API URL
         {
           name: uid,
           qty: Number(stockQuantity),
           price: Number(stockPrice),
           mode: "BUY",
         },
-        { withCredentials: true }
+        { withCredentials: true } // Necessary for storing authenticated user order contexts
       );
 
       closeBuyWindow();
-            navigate("/orders");
+      navigate("/orders");
     } catch (err) {
       console.error("Order submission failed:", err);
-      alert("Could not process order. Make sure backend is running!");
+      alert("Could not process order. Make sure backend is running and you are logged in!");
     }
   };
 

@@ -5,7 +5,9 @@ const Orders = () => {
   const [allOrders, setAllOrders] = useState([]);
 
   useEffect(() => {
-    axios.get("http://localhost:8080/allOrders", { withCredentials: true })
+    const baseURL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+
+    axios.get(`${baseURL}/allOrders`, { withCredentials: true }) 
       .then((res) => {
         setAllOrders(res.data);
       })

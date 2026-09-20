@@ -2,15 +2,18 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 
+const BACKEND_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+
 const Funds = () => {
   const [fundsData, setFundsData] = useState(null);
   const [loading, setLoading] = useState(true);
   
   const [inputAmount, setInputAmount] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
   const fetchFunds = async () => {
     try {
-      const response = await axios.get("http://localhost:8080/getFunds", { 
+      const response = await axios.get(`${BACKEND_URL}/getFunds`, { 
         withCredentials: true 
       });
       setFundsData(response.data);
@@ -20,9 +23,11 @@ const Funds = () => {
       setLoading(false);
     }
   };
+
   useEffect(() => {
     fetchFunds();
   }, []);
+
   const handleAddFundsSubmit = async (e) => {
     e.preventDefault();
     if (!inputAmount || isNaN(inputAmount) || Number(inputAmount) <= 0) {
@@ -33,7 +38,7 @@ const Funds = () => {
     setIsSubmitting(true);
     try {
       const response = await axios.post(
-        "http://localhost:8080/addFunds",
+        `${BACKEND_URL}/addFunds`,
         { amount: inputAmount },
         { withCredentials: true }
       );
@@ -69,7 +74,6 @@ const Funds = () => {
 
   return (
     <>
-      {/* 💳 Interactive Deposit Section */}
       <div className="funds p-4 mb-4 border rounded bg-light">
         <p className="mb-3 fw-bold text-muted">Instant, zero-cost fund transfers with UPI </p>
         

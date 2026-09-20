@@ -15,22 +15,25 @@ const SellActionWindow = ({ uid }) => {
     e.preventDefault(); 
     
     try {
+      // Reads your deployed Render URL from the .env file; defaults to localhost if empty
+      const baseURL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+
       await axios.post(
-        "http://localhost:8080/newOrder", 
+        `${baseURL}/newOrder`, // 👈 Updated to live Render API URL
         {
           name: uid,
           qty: Number(stockQuantity),
           price: Number(stockPrice),
           mode: "SELL",
         },
-        { withCredentials: true }
+        { withCredentials: true } // Keeps auth session data attached to transaction requests
       );
 
       closeSellWindow();
       navigate("/orders");
     } catch (err) {
       console.error("Sell transaction failed:", err);
-      alert("Could not process sell entry.");
+      alert("Could not process sell entry. Make sure backend is running and you are logged in!");
     }
   };
 

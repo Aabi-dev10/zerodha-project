@@ -30,8 +30,10 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const baseURL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+
       const { data } = await axios.post(
-        "http://localhost:8080/login",
+        `${baseURL}/login`,
         {
           ...inputValue,
         },
@@ -49,6 +51,7 @@ const Login = () => {
       }
     } catch (error) {
       console.log(error);
+      handleError("Unable to connect to the authentication server.");
     }
     setInputValue({
       ...inputValue,
@@ -58,26 +61,24 @@ const Login = () => {
   };
 
   return (
-
-      <div>
-        <h2>Login to Account</h2>
-        <form onSubmit={handleSubmit}>
-          
-          <div className="mb-3">
-            <label className="form-label p-2 fs-6" htmlFor="emailInput">
-              Email:
-            </label>
-            <input
-              type="email"
-              name="email"
-              value={email}
-              placeholder="Enter your email"
-              onChange={handleOnChange}
-              className="form-control border-primary w-100 p-3 text-center"
-              id="emailInput"
-              required
-            />
-          </div>
+    <div>
+      <h2>Login to Account</h2>
+      <form onSubmit={handleSubmit}>
+        <div className="mb-3">
+          <label className="form-label p-2 fs-6" htmlFor="emailInput">
+            Email:
+          </label>
+          <input
+            type="email"
+            name="email"
+            value={email}
+            placeholder="Enter your email"
+            onChange={handleOnChange}
+            className="form-control border-primary w-100 p-3 text-center"
+            id="emailInput"
+            required
+          />
+        </div>
         <div>
           <label htmlFor="password" className="form-label border border-primary">
             Password
@@ -90,14 +91,13 @@ const Login = () => {
             onChange={handleOnChange}
           />
         </div>
-        <button type="submit" >Submit</button>
+        <button type="submit">Submit</button>
         <span>
           Already have an account? <Link to={"/signup"}>Signup</Link>
         </span>
       </form>
       <ToastContainer />
     </div>
-
   );
 };
 

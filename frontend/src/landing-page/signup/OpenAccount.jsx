@@ -6,32 +6,50 @@ import { ToastContainer, toast } from "react-toastify";
 
 const OpenAccount = () => {
   const navigate = useNavigate();
-  const [cookies, removeCookie] = useCookies([]);
+  const [cookies, removeCookie] = useCookies(["token"]);
   const [username, setUsername] = useState("");
+
   useEffect(() => {
     const verifyCookie = async () => {
       if (!cookies.token) {
         navigate("/login");
+        return; 
       }
-      const { data } = await axios.post(
-        "http://localhost:8080",
-        {},
-        { withCredentials: true }
-      );
-      const { status, user } = data;
-      setUsername(user);
-      return status
-        ? toast(`Hello ${user}`, {
+      
+      try {
+        const baseURL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+        
+        const { data } = await axios.post(
+          `${baseURL}`, 
+          {},
+          { withCredentials: true }
+        );
+        
+        const { status, user } = data;
+        
+        if (status) {
+          setUsername(user);
+          toast(`Hello ${user}`, {
             position: "top-right",
-          })
-        : (removeCookie("token"), navigate("/login"));
+          });
+        } else {
+          removeCookie("token");
+          navigate("/login");
+        }
+      } catch (error) {
+        console.error("Authentication verification error:", error);
+        removeCookie("token");
+        navigate("/login");
+      }
     };
     verifyCookie();
   }, [cookies, navigate, removeCookie]);
+
   const Logout = () => {
     removeCookie("token");
     navigate("/signup");
   };
+
   return (
     <>
       <div className="home_page">

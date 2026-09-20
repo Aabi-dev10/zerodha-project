@@ -5,7 +5,10 @@ const Positions = () => {
   const [allPositions, setAllPositions] = useState([]);
 
   useEffect(() => {
-    axios.get("http://localhost:8080/allPositions", { withCredentials: true })
+    // Reads your deployed Render URL from the .env file; defaults to localhost if empty
+    const baseURL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+
+    axios.get(`${baseURL}/allPositions`, { withCredentials: true }) // 👈 Updated to live Render API URL
       .then((res) => {
         setAllPositions(res.data);
       })
@@ -31,7 +34,7 @@ const Positions = () => {
               <th>Chg.</th>
             </tr>
           </thead>
-                    <tbody>
+          <tbody>
             {allPositions.map((stock, index) => {
               const qty = stock.qty || 0;
               const avg = stock.avg || 0;

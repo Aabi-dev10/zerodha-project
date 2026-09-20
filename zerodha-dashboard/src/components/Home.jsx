@@ -4,6 +4,10 @@ import { useCookies } from "react-cookie";
 import axios from "axios";
 
 import Dashboard from "./Dashboard.jsx"; 
+
+const BACKEND_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+const FRONTEND_URL = import.meta.env.VITE_FRONTEND_URL || "http://localhost:5173";
+
 const Home = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -13,16 +17,18 @@ const Home = () => {
   const [username, setUsername] = useState("");
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  
   useEffect(() => {
     const verifyUserSession = async () => {
       if (!cookies.token) {
-        window.location.href = "http://localhost:5173/login";
+        // 1. Updated to dynamic frontend auth link fallback
+        window.location.href = `${FRONTEND_URL}/login`;
         return;
       }
     
       try {
         const { data } = await axios.post(
-          "http://localhost:8080/",
+          `${BACKEND_URL}/`, 
           {},
           { withCredentials: true } 
         );
@@ -34,21 +40,23 @@ const Home = () => {
           setLoading(false);
         } else {
           removeCookie("token", { path: "/" });
-          window.location.href = "http://localhost:5173/login";
+          window.location.href = `${FRONTEND_URL}/login`;
         }
       } catch (error) {
         console.error("Dashboard session mounting verification failed:", error);
         removeCookie("token", { path: "/" });
-        window.location.href = "http://localhost:5173/login";
+        window.location.href = `${FRONTEND_URL}/login`;
       }
     };
 
     verifyUserSession();
   }, [cookies.token, removeCookie]);
+
   const handleLogout = () => {
     removeCookie("token", { path: "/" });
-    window.location.href = "http://localhost:5173/"; 
+    window.location.href = `${FRONTEND_URL}/`; 
   };
+
   const getLinkClass = (path) => {
     return location.pathname === path ? "nav-link active-tab" : "nav-link";
   };
@@ -56,6 +64,7 @@ const Home = () => {
   const handleNavClick = () => {
     setIsMenuOpen(false); 
   };
+
   if (loading) {
     return (
       <div className="text-center mt-5" style={{ fontFamily: "sans-serif" }}>
@@ -63,13 +72,13 @@ const Home = () => {
       </div>
     );
   }
+
   return (
     <div className="dashboard-root-layout">
-      
       {/*nav bar*/}
       <nav className="dashboard-navbar shadow-sm">
         <div className="nav-container-wrapper">
-                    <Link to="/" className="nav-brand-logo" onClick={handleNavClick}>
+          <Link to="/" className="nav-brand-logo" onClick={handleNavClick}>
             Kite Clone
           </Link>
           <button 
@@ -88,20 +97,18 @@ const Home = () => {
             <Link to="/positions" className={getLinkClass("/positions")} onClick={handleNavClick}>Positions</Link>
             <Link to="/funds" className={getLinkClass("/funds")} onClick={handleNavClick}>Funds</Link>
             <Link to="/apps" className={getLinkClass("/apps")} onClick={handleNavClick}>Apps</Link>
-                        <span className="nav-username-display">
+            <span className="nav-username-display">
               Hi, {username}!
             </span>
             <button onClick={handleLogout} className="btn-logout-desktop">
               Logout
             </button>
           </div>
-
         </div>
       </nav>
       <div className="dashboard-main-content-window p-3">
         <Dashboard username={username} />
       </div>
-
     </div>
   );
 };

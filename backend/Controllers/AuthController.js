@@ -17,19 +17,26 @@ module.exports.Signup = async (req, res, next) => {
       return res.status(400).json({ message: "User already exists", success: false });
     }
     const user = await User.create({ email, password, username, createdAt });
-        await FundsModel.create({
+    
+    await FundsModel.create({
       userId: user._id,
       availableMargin: 75000.00,
       availableCash: 75000.00,
       openingBalance: 75000.00
     });
+    
     const token = createSecretToken(user._id);
+    
+    // 💡 UPDATED: Configured for production HTTPS cookie handling across origins
     res.cookie("token", token, {
       path: "/",
-      sameSite: "lax", 
-      secure: false, 
-      httpOnly: false, 
+      withCredentials: true,
+      sameSite: "none",           // 🔒 REQUIRED: Allows cookie tracking across separate Render sites
+      secure: true,               // 🔒 REQUIRED: Encrypts the cookie over HTTPS on Render
+      httpOnly: false,            // Allows your frontend layout routing logic to check token existence
+      maxAge: 24 * 60 * 60 * 1000 // 1 Day
     });
+    
     return res.status(201).json({ 
       message: "User signed in successfully", 
       success: true, 
@@ -41,6 +48,7 @@ module.exports.Signup = async (req, res, next) => {
     return res.status(500).json({ success: false, error: error.message });
   }
 };
+
 // 2. LOGIN CONTROLLER ROUTE
 module.exports.Login = async (req, res, next) => {
   try {
@@ -56,13 +64,19 @@ module.exports.Login = async (req, res, next) => {
     if (!auth) {
       return res.status(401).json({ message: 'Incorrect password or email', success: false }); 
     }
+    
     const token = createSecretToken(user._id);
+    
+    // 💡 UPDATED: Configured for production HTTPS cookie handling across origins
     res.cookie("token", token, {
       path: "/",
-      sameSite: "lax",
-      secure: false,
-      httpOnly: false,
+      withCredentials: true,
+      sameSite: "none",           // 🔒 REQUIRED: Allows cookie tracking across separate Render sites
+      secure: true,               // 🔒 REQUIRED: Encrypts the cookie over HTTPS on Render
+      httpOnly: false,            // Allows your frontend layout routing logic to check token existence
+      maxAge: 24 * 60 * 60 * 1000 // 1 Day
     });
+    
     return res.status(200).json({ 
       message: "User logged in successfully", 
       success: true, 
@@ -74,6 +88,7 @@ module.exports.Login = async (req, res, next) => {
     return res.status(500).json({ message: "Internal server error", success: false });
   }
 };
+
 // 3. VERIFY COOKIE DASHBOARD ROUTE
 module.exports.VerifyUser = async (req, res) => {
   try {

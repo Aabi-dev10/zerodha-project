@@ -7,9 +7,9 @@ import Dashboard from "./Dashboard.jsx";
 
 axios.defaults.withCredentials = true;
 
-// 💡 Ensure these point to the clean domains without trailing slashes
-const BACKEND_URL = (import.meta.env.VITE_API_URL || "http://localhost:8080").replace(/\/\$/, "");
-const FRONTEND_URL = (import.meta.env.VITE_FRONTEND_URL || "https://onrender.com").replace(/\/\$/, "");
+// 💡 FIXED: Configured with clear production paths and valid trim statements
+const BACKEND_URL = (import.meta.env.VITE_API_URL || "https://zerodha-project-byag.onrender.com").replace(/\/\$/, "");
+const FRONTEND_URL = (import.meta.env.VITE_FRONTEND_URL || "https://zerodha-frontend-main.onrender.com").replace(/\/\$/, "");
 
 const Home = () => {
   const navigate = useNavigate(); 
@@ -38,10 +38,8 @@ const Home = () => {
         window.history.replaceState({}, document.title, window.location.pathname);
       }
 
-      // Check cookies first, then check local fallback storage context
       const activeToken = cookies.token || localStorage.getItem("token") || tokenFromUrl;
 
-      // 💡 THE FIX: If there's no token, redirect out to the independent Login landing page URL
       if (!activeToken) {
         console.log("🔒 Access denied: Missing token string.");
         window.location.href = `${FRONTEND_URL}/login`;

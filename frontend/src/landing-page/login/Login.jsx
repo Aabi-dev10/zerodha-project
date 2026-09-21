@@ -1,10 +1,7 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom"; // 💡 Cleaned up unused useNavigate hook
+import { Link } from "react-router-dom"; 
 import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
-
-// 💡 Dynamically resolve your deployed dashboard domain or fall back to local development ports
-const DASHBOARD_URL = (import.meta.env.VITE_DASHBOARD_URL || "http://localhost:5173").replace(/\/\$/, "");
 
 const Login = () => {
   const [inputValue, setInputValue] = useState({
@@ -22,33 +19,26 @@ const Login = () => {
   };
 
   const handleError = (err) =>
-    toast.error(err, {
-      position: "bottom-left",
-    });
+    toast.error(err, { position: "bottom-left" });
     
   const handleSuccess = (msg) =>
-    toast.success(msg, {
-      position: "bottom-left",
-    });
+    toast.success(msg, { position: "bottom-left" });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const baseURL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+      // 💡 ABSOLUTE BACKEND URL PRODUCTION FALLBACK
+      const baseURL = (import.meta.env.VITE_API_URL || "https://zerodha-project-byag.onrender.com").replace(/\/\$/, "");
 
       const { data } = await axios.post(
         `${baseURL}/login`,
-        {
-          ...inputValue,
-        },
+        { ...inputValue },
         { withCredentials: true },
       );
       
-      console.log(data);
       const { success, message, token } = data;
       
       if (success) {
-        // 🔒 Save the token locally to circumvent Chrome cross-origin constraints
         if (token) {
           localStorage.setItem("token", token);
         }
@@ -56,10 +46,11 @@ const Login = () => {
         handleSuccess(message);
         
         setTimeout(() => {
-          // 💡 THE ARCHITECTURAL FIX: 
-          // Instead of navigating inside the public app, jump domains to the dashboard app
-          // Passing the token as a URL param ensures the dashboard application can intercept it immediately
-          window.location.href = `${DASHBOARD_URL}/?token=${token}`;
+          // 💡 ABSOLUTE DASHBOARD PORTAL PRODUCTION FALLBACK
+          const targetDashboard = (import.meta.env.VITE_DASHBOARD_URL || "https://zerodha-dashboard-app.onrender.com").replace(/\/\$/, "");
+          
+          // Jump domains explicitly with the query token parameter attached
+          window.location.href = `${targetDashboard}/?token=${token}`;
         }, 1000);
       } else {
         handleError(message);
@@ -68,11 +59,6 @@ const Login = () => {
       console.log(error);
       handleError("Unable to connect to the authentication server.");
     }
-    
-    setInputValue({
-      email: "",
-      password: "",
-    });
   };
 
   return (
@@ -80,9 +66,7 @@ const Login = () => {
       <h2>Login to Account</h2>
       <form onSubmit={handleSubmit}>
         <div className="mb-3">
-          <label className="form-label p-2 fs-6" htmlFor="emailInput">
-            Email:
-          </label>
+          <label className="form-label" htmlFor="emailInput">Email:</label>
           <input
             type="email"
             name="email"
@@ -96,9 +80,7 @@ const Login = () => {
           />
         </div>
         <div className="mb-3">
-          <label htmlFor="passwordInput" className="form-label">
-            Password:
-          </label>
+          <label htmlFor="passwordInput" className="form-label">Password:</label>
           <input
             id="passwordInput"
             type="password"
@@ -111,8 +93,8 @@ const Login = () => {
             required
           />
         </div>
-        <button type="submit" className="btn btn-primary w-100 p-3">Submit</button>
-        <span className="d-block mt-3 text-center">
+        <button type="submit">Submit</button>
+        <span>
           Already have an account? <Link to={"/signup"}>Signup</Link>
         </span>
       </form>

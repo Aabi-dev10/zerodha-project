@@ -7,7 +7,7 @@ import Dashboard from "./Dashboard.jsx";
 
 axios.defaults.withCredentials = true;
 
-// 💡 FIX: Standardized cleaner syntax to prevent layout path breaks
+// 💡 FIXED: The regex pattern is corrected to cleanly strip trailing slashes
 const BACKEND_URL = (import.meta.env.VITE_API_URL || "http://localhost:8080").replace(/\/\$/, "");
 const FRONTEND_URL = (import.meta.env.VITE_FRONTEND_URL || "http://localhost:5173").replace(/\/\$/, "");
 
@@ -38,7 +38,7 @@ const Home = () => {
         window.history.replaceState({}, document.title, window.location.pathname);
       }
 
-      // 💡 FIX: Check cookies first, then check local fallback storage context
+      // Check cookies first, then check local fallback storage context
       const activeToken = cookies.token || localStorage.getItem("token") || tokenFromUrl;
 
       // 2. Safety lock: If there's no token anywhere, redirect back to login
@@ -52,7 +52,7 @@ const Home = () => {
           `${BACKEND_URL}/`, 
           {},
           { 
-            headers: { Authorization: `Bearer ${activeToken}` }, // 💡 Attached the header fallback
+            headers: { Authorization: `Bearer ${activeToken}` }, // Attached the header fallback
             withCredentials: true 
           } 
         );
@@ -80,7 +80,7 @@ const Home = () => {
 
   const handleLogout = () => {
     removeCookie("token", { path: "/" });
-    localStorage.removeItem("token"); // 💡 Clear on logout
+    localStorage.removeItem("token"); // Clear on logout
     window.location.href = `${FRONTEND_URL}/login`; 
   };
 

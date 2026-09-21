@@ -1,21 +1,28 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { useCookies } from "react-cookie"; // 💡 ADDED: For token fallback
 
 const Positions = () => {
   const [allPositions, setAllPositions] = useState([]);
+  const [cookies] = useCookies(["token"]); // 💡 ADDED: Read local cookie token
 
   useEffect(() => {
-    // Reads your deployed Render URL from the .env file; defaults to localhost if empty
     const baseURL = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
-    axios.get(`${baseURL}/allPositions`, { withCredentials: true }) // 👈 Updated to live Render API URL
+    // 💡 UPDATED: Added headers configuration block to pass the Authorization token
+    axios.get(`${baseURL}/allPositions`, { 
+      withCredentials: true,
+      headers: {
+        Authorization: `Bearer ${cookies.token}`
+      }
+    })
       .then((res) => {
         setAllPositions(res.data);
       })
       .catch((err) => {
         console.error("Error fetching live trading positions:", err);
       });
-  }, []);
+  }, [cookies.token]); // 💡 ADDED: Depend on cookie token state changes
 
   return (
     <>

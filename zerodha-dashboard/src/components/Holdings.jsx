@@ -1,21 +1,29 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { useCookies } from "react-cookie"; // 💡 ADDED: For token fallback
 import { VerticalGraph } from "./VerticalGraph.jsx";
 
 const Holdings = () => {
   const [allHoldings, setAllHoldings] = useState([]);
+  const [cookies] = useCookies(["token"]); // 💡 ADDED: Read local cookie token
 
   useEffect(() => {
     const baseURL = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
-    axios.get(`${baseURL}/allHoldings`, { withCredentials: true }) 
+    // 💡 UPDATED: Added headers configuration block to pass the Authorization token
+    axios.get(`${baseURL}/allHoldings`, { 
+      withCredentials: true,
+      headers: {
+        Authorization: `Bearer ${cookies.token}`
+      }
+    }) 
       .then((res) => {
         setAllHoldings(res.data);
       })
       .catch((err) => {
         console.error("Error fetching holdings:", err);
       });
-  }, []);
+  }, [cookies.token]); // 💡 ADDED: Depend on cookie token state changes
 
   let totalInvestment = 0;
   let totalCurrentValue = 0;

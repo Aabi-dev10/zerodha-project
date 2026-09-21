@@ -6,6 +6,15 @@ const User = require("../model/UserModel.js");
 const { createSecretToken } = require("../util/SecretToken.js");
 const bcrypt = require("bcryptjs");
 
+// 💡 Cookie Configuration Helper for consistent production deployment options
+const cookieOptions = {
+  path: "/",
+  sameSite: "none",           // 🔒 REQUIRED: Allows cookie tracking across separate deployed domains
+  secure: true,               // 🔒 REQUIRED: Encrypts the cookie over HTTPS on Render/Vercel
+  httpOnly: false,            // Allows your frontend layout routing logic to check token existence
+  maxAge: 24 * 60 * 60 * 1000 // 1 Day
+};
+
 // 1. SIGNUP CONTROLLER ROUTE
 module.exports.Signup = async (req, res, next) => {
   try {
@@ -27,15 +36,8 @@ module.exports.Signup = async (req, res, next) => {
     
     const token = createSecretToken(user._id);
     
-    // 💡 UPDATED: Configured for production HTTPS cookie handling across origins
-    res.cookie("token", token, {
-      path: "/",
-      withCredentials: true,
-      sameSite: "none",           // 🔒 REQUIRED: Allows cookie tracking across separate Render sites
-      secure: true,               // 🔒 REQUIRED: Encrypts the cookie over HTTPS on Render
-      httpOnly: false,            // Allows your frontend layout routing logic to check token existence
-      maxAge: 24 * 60 * 60 * 1000 // 1 Day
-    });
+    // Set secure cookie
+    res.cookie("token", token, cookieOptions);
     
     return res.status(201).json({ 
       message: "User signed in successfully", 
@@ -67,15 +69,8 @@ module.exports.Login = async (req, res, next) => {
     
     const token = createSecretToken(user._id);
     
-    // 💡 UPDATED: Configured for production HTTPS cookie handling across origins
-    res.cookie("token", token, {
-      path: "/",
-      withCredentials: true,
-      sameSite: "none",           // 🔒 REQUIRED: Allows cookie tracking across separate Render sites
-      secure: true,               // 🔒 REQUIRED: Encrypts the cookie over HTTPS on Render
-      httpOnly: false,            // Allows your frontend layout routing logic to check token existence
-      maxAge: 24 * 60 * 60 * 1000 // 1 Day
-    });
+    // Set secure cookie
+    res.cookie("token", token, cookieOptions);
     
     return res.status(200).json({ 
       message: "User logged in successfully", 
@@ -89,14 +84,26 @@ module.exports.Login = async (req, res, next) => {
   }
 };
 
-// 3. VERIFY COOKIE DASHBOARD ROUTE
+// 3. VERIFY COOKIE & HEADER DASHBOARD ROUTE
 module.exports.VerifyUser = async (req, res) => {
   try {
-    const token = req.cookies.token;
-    console.log("Verifying token connection payload:", token);
-    if (!token) {
-      return res.json({ status: false, message: "Authentication cookie missing" });
+    // 💡 Try reading from cookies first
+    let token = req.cookies.token;
+
+    // 💡 Fail-safe fallback: If cookies are blocked by Chrome, extract from the Authorization header
+    if (!token && req.headers.authorization) {
+      const authHeader = req.headers.authorization;
+      if (authHeader.startsWith("Bearer ")) {
+        token = authHeader.split(" ")[1]; 
+      }
     }
+
+    console.log("Verifying token connection status:", token ? "Token Found" : "Token Missing");
+    
+    if (!token) {
+      return res.json({ status: false, message: "Authentication token or cookie missing" });
+    }
+    
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       const user = await User.findById(decoded.id);

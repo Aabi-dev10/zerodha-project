@@ -1,20 +1,29 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import axios from "react-cookie";
+import { useCookies } from "react-cookie"; // 💡 ADDED: For token fallback
+import axiosInstance from "axios"; // Using standard alias or direct import below
 
 const Orders = () => {
   const [allOrders, setAllOrders] = useState([]);
+  const [cookies] = useCookies(["token"]); // 💡 ADDED: Read local cookie token
 
   useEffect(() => {
     const baseURL = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
-    axios.get(`${baseURL}/allOrders`, { withCredentials: true }) 
+    // 💡 UPDATED: Added headers configuration block to pass the Authorization token
+    axiosInstance.get(`${baseURL}/allOrders`, { 
+      withCredentials: true,
+      headers: {
+        Authorization: `Bearer ${cookies.token}`
+      }
+    }) 
       .then((res) => {
         setAllOrders(res.data);
       })
       .catch((err) => {
         console.error("Error fetching orders:", err);
       });
-  }, []);
+  }, [cookies.token]); // 💡 ADDED: Depend on cookie token state changes
 
   return (
     <>

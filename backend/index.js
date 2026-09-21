@@ -10,28 +10,42 @@ const methodOverride = require('method-override');
 const jwt = require("jsonwebtoken");
 const FundsModel = require("./model/fundsModel.js");
 const HoldingsModel = require("./model/holdingsModel.js");
-const  PositionsModel  = require("./model/positionsModel.js");
-const  OrdersModel  = require("./model/ordersModel.js");
-const authRoute  = require("./Routes/AuthRoute.js");
+const PositionsModel = require("./model/positionsModel.js");
+const OrdersModel = require("./model/ordersModel.js");
+const authRoute = require("./Routes/AuthRoute.js");
 const PORT = process.env.PORT || 8080;
 const uri = process.env.MONGO_URL;
+
 const ALLOWED_ORIGINS = [
   "https://zerodha-frontend-main.onrender.com", 
   "https://zerodha-dashboard-app.onrender.com", 
   "http://localhost:5174", 
   "http://localhost:5173"  
 ];
+
+// 💡 Helper function to extract token from Cookie OR Authorization Header
+const extractToken = (req) => {
+  if (req.cookies && req.cookies.token) {
+    return req.cookies.token;
+  }
+  if (req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
+    return req.headers.authorization.split(" ")[1];
+  }
+  return null;
+};
+
 app.use(
   cors({
     origin: function (origin, callback) {
       if (!origin) return callback(null, true);
-            if (ALLOWED_ORIGINS.indexOf(origin) !== -1) {
+      if (ALLOWED_ORIGINS.indexOf(origin) !== -1) {
         callback(null, true);
       } else {
         callback(new Error("Not allowed by CORS policy"));
       }
     },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"], // 🔒 CRITICAL: Allows frontend to pass the header token fallback
     credentials: true, 
   })
 );
@@ -42,20 +56,19 @@ app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride('_method'));
 app.use(bodyParser.json());
 
-//Holdings routes
+// Holdings routes
 app.get("/allHoldings", async (req, res) => {
   let allHoldings = await HoldingsModel.find({});
   res.json(allHoldings);
 });
 
-//Positions routes
-
+// Positions routes
 app.get("/allPositions", async (req, res) => {
   let allPositions = await PositionsModel.find({});
   res.json(allPositions);
 });
 
-//Orders routes
+// Orders routes
 app.get("/allOrders", async (req, res) => {
   try {
     let allOrders = await OrdersModel.find({});
@@ -65,7 +78,7 @@ app.get("/allOrders", async (req, res) => {
   }
 });
 
-//Orders routes
+// Orders routes
 app.post("/newOrder", async (req, res) => {
   try {
     const { name, qty, price, mode } = req.body;
@@ -84,20 +97,21 @@ app.post("/newOrder", async (req, res) => {
   }
 });
  
-//Funde routes
+// Funds routes
 app.get("/getFunds", async (req, res) => {
   try {
-    const token = req.cookies.token;
+    // 💡 UPDATED: Uses extraction helper to circumvent Chrome cross-origin cookie tracking rules
+    const token = extractToken(req);
     if (!token) {
       return res.status(401).json({ message: "Unauthorized: Missing authentication token." });
     }
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        let userFunds = await FundsModel.findOne({ userId: decoded.id });
+    let userFunds = await FundsModel.findOne({ userId: decoded.id });
     if (!userFunds) {
       userFunds = await FundsModel.create({ userId: decoded.id });
     }
     const totalCollateral = userFunds.collateralLiquid + userFunds.collateralEquity;
-        return res.status(200).json({
+    return res.status(200).json({
       availableMargin: userFunds.availableMargin,
       usedMargin: userFunds.usedMargin,
       availableCash: userFunds.availableCash,
@@ -118,10 +132,11 @@ app.get("/getFunds", async (req, res) => {
   }
 });
 
-//Add Funds routes
+// Add Funds routes
 app.post("/addFunds", async (req, res) => {
   try {
-    const token = req.cookies.token;
+    // 💡 UPDATED: Uses extraction helper to circumvent Chrome cross-origin cookie tracking rules
+    const token = extractToken(req);
     const { amount } = req.body;
     if (!token) {
       return res.status(401).json({ success: false, message: "Unauthorized." });
@@ -130,7 +145,7 @@ app.post("/addFunds", async (req, res) => {
       return res.status(400).json({ success: false, message: "Please enter a valid amount." });
     }
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
- const numericAmount = Number(amount);
+    const numericAmount = Number(amount);
     const updatedFunds = await FundsModel.findOneAndUpdate(
       { userId: decoded.id },
       { 
@@ -153,7 +168,7 @@ app.post("/addFunds", async (req, res) => {
   }
 });
 
-app.use("/", authRoute );
+app.use("/", authRoute);
 
 app.listen(PORT, () => {
   console.log("App started!");

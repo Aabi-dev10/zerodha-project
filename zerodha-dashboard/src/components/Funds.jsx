@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useCookies } from "react-cookie"; // 💡 ADDED: Read local session token
 import axios from "axios";
 
 const BACKEND_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
@@ -10,11 +11,16 @@ const Funds = () => {
   
   const [inputAmount, setInputAmount] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [cookies] = useCookies(["token"]); // 💡 ADDED: Initialize cookie hook
 
   const fetchFunds = async () => {
     try {
+      // 💡 UPDATED: Injected Headers block with Bearer token token fallback validation
       const response = await axios.get(`${BACKEND_URL}/getFunds`, { 
-        withCredentials: true 
+        withCredentials: true,
+        headers: {
+          Authorization: `Bearer ${cookies.token}`
+        }
       });
       setFundsData(response.data);
       setLoading(false);
@@ -26,7 +32,7 @@ const Funds = () => {
 
   useEffect(() => {
     fetchFunds();
-  }, []);
+  }, [cookies.token]); // 💡 ADDED: Triggers fetch immediately upon cookie token synchronization
 
   const handleAddFundsSubmit = async (e) => {
     e.preventDefault();
@@ -37,10 +43,16 @@ const Funds = () => {
 
     setIsSubmitting(true);
     try {
+      // 💡 UPDATED: Added headers metadata to let backend parse transaction values securely
       const response = await axios.post(
         `${BACKEND_URL}/addFunds`,
         { amount: inputAmount },
-        { withCredentials: true }
+        { 
+          withCredentials: true,
+          headers: {
+            Authorization: `Bearer ${cookies.token}`
+          }
+        }
       );
 
       if (response.data.success) {

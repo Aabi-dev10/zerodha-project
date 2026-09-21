@@ -27,8 +27,8 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // 💡 FIXED: Uses valid regex matching to strip any trailing slashes safely
-      const baseURL = (import.meta.env.VITE_API_URL || "https://zerodha-project-byag.onrender.com").replace(/\/\$/, "");
+      // 💡 FIXED: Uses valid regex matching to strip trailing slashes safely
+      const baseURL = (import.meta.env.VITE_API_URL || "https://zerodha-project-byag.onrender.com").replace(/\/+\$/, "");
 
       const { data } = await axios.post(
         `${baseURL}/login`,
@@ -46,12 +46,12 @@ const Login = () => {
         handleSuccess(message);
         
         setTimeout(() => {
-          // 💡 FIXED: Clean trailing slashes out of the dashboard domain
-          const targetDashboard = (import.meta.env.VITE_DASHBOARD_URL || "https://zerodha-dashboard-app.onrender.com").replace(/\/\$/, "");
+          // 💡 FIXED: Clean out any trailing slashes cleanly first
+          const targetDashboard = (import.meta.env.VITE_DASHBOARD_URL || "https://zerodha-dashboard-app.onrender.com").replace(/\/+\$/, "");
           
-          // 🔒 CRITICAL CORRECTION: Removed the explicit forward slash before '?token='
-          // This stops Render from eating your parameter data during the cross-domain jump!
-          window.location.href = `${targetDashboard}?token=${token}`;
+          // 🔒 CRITICAL CORRECTION: Added a forward slash BEFORE the question mark ('/?token=')
+          // This stops Render from executing a redirect that strips out your token query parameters!
+          window.location.href = `${targetDashboard}/?token=${token}`;
         }, 1000);
       } else {
         handleError(message);

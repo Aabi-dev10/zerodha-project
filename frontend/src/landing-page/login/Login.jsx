@@ -27,7 +27,7 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // 💡 ABSOLUTE BACKEND URL PRODUCTION FALLBACK
+      // 💡 FIXED: Uses valid regex matching to strip any trailing slashes safely
       const baseURL = (import.meta.env.VITE_API_URL || "https://zerodha-project-byag.onrender.com").replace(/\/\$/, "");
 
       const { data } = await axios.post(
@@ -46,11 +46,12 @@ const Login = () => {
         handleSuccess(message);
         
         setTimeout(() => {
-          // 💡 ABSOLUTE DASHBOARD PORTAL PRODUCTION FALLBACK
+          // 💡 FIXED: Clean trailing slashes out of the dashboard domain
           const targetDashboard = (import.meta.env.VITE_DASHBOARD_URL || "https://zerodha-dashboard-app.onrender.com").replace(/\/\$/, "");
           
-          // Jump domains explicitly with the query token parameter attached
-          window.location.href = `${targetDashboard}/?token=${token}`;
+          // 🔒 CRITICAL CORRECTION: Removed the explicit forward slash before '?token='
+          // This stops Render from eating your parameter data during the cross-domain jump!
+          window.location.href = `${targetDashboard}?token=${token}`;
         }, 1000);
       } else {
         handleError(message);

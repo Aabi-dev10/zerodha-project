@@ -6,9 +6,9 @@ import axios from "axios";
 import Dashboard from "./Dashboard.jsx"; 
 
 axios.defaults.withCredentials = true;
+const BACKEND_URL = (import.meta.env.VITE_API_URL || "https://onrender.com").replace(/\/+$/, "");
+const FRONTEND_URL = (import.meta.env.VITE_FRONTEND_URL || "https://onrender.com").replace(/\/+$/, "");
 
-const BACKEND_URL = (import.meta.env.VITE_API_URL || "https://onrender.com").replace(/\/\$/, "");
-const FRONTEND_URL = (import.meta.env.VITE_FRONTEND_URL || "https://onrender.com").replace(/\/\$/, "");
 
 const Home = () => {
   const navigate = useNavigate(); 

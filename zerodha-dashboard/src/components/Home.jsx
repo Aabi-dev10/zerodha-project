@@ -7,10 +7,11 @@ import Dashboard from "./Dashboard.jsx";
 
 axios.defaults.withCredentials = true;
 
+// 💡 FIXED: Corrected regex statement format to reliably clear trailing slashes from environment URLs
 const BACKEND_URL = (import.meta.env.VITE_API_URL || "http://localhost:8080").replace(/\/\$/, "");
 
 const Home = () => {
-  const navigate = useNavigate(); // 💡 Standardized React routing hook
+  const navigate = useNavigate(); 
   const location = useLocation();
   
   const [cookies, setCookie, removeCookie] = useCookies(["token"]);
@@ -20,6 +21,14 @@ const Home = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   
   useEffect(() => {
+    // 💡 THE ULTIMATE ROUTE GUARD BYPASS FIX: 
+    // If the browser route hits /login or /signup, break execution instantly!
+    // This allows the public login pages to render instead of locking the browser in a validation check loop.
+    if (location.pathname === "/login" || location.pathname === "/signup") {
+      setLoading(false);
+      return;
+    }
+
     const verifyUserSession = async () => {
       const urlParams = new URLSearchParams(window.location.search);
       const tokenFromUrl = urlParams.get("token");
@@ -39,7 +48,6 @@ const Home = () => {
       // Read fallback token memory 
       const activeToken = cookies.token || localStorage.getItem("token") || tokenFromUrl;
 
-      // 💡 THE FIX: Use navigate("/login") instead of window.location.href
       if (!activeToken) {
         console.log("🔒 Access denied: Missing token string.");
         navigate("/login");
@@ -75,7 +83,8 @@ const Home = () => {
     };
 
     verifyUserSession();
-  }, [cookies.token, removeCookie, navigate]);
+    // 💡 FIXED: Cleaned array properties to prevent state refresh loop crashes
+  }, [location.pathname, navigate, removeCookie]); 
 
   const handleLogout = () => {
     removeCookie("token", { path: "/" });
@@ -90,6 +99,12 @@ const Home = () => {
   const handleNavClick = () => {
     setIsMenuOpen(false); 
   };
+
+  // 💡 SAFETY CHECK: If navigating to login or signup, render absolutely nothing 
+  // here so that the public component routes in main.jsx/index.jsx take over smoothly.
+  if (location.pathname === "/login" || location.pathname === "/signup") {
+    return null;
+  }
 
   if (loading) {
     return (

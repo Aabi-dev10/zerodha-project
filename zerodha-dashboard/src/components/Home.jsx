@@ -7,9 +7,8 @@ import Dashboard from "./Dashboard.jsx";
 
 axios.defaults.withCredentials = true;
 
-// 💡 FIXED: Configured with clear production paths and valid trim statements
-const BACKEND_URL = (import.meta.env.VITE_API_URL || "https://zerodha-project-byag.onrender.com").replace(/\/\$/, "");
-const FRONTEND_URL = (import.meta.env.VITE_FRONTEND_URL || "https://zerodha-frontend-main.onrender.com").replace(/\/\$/, "");
+const BACKEND_URL = (import.meta.env.VITE_API_URL || "https://onrender.com").replace(/\/\$/, "");
+const FRONTEND_URL = (import.meta.env.VITE_FRONTEND_URL || "https://onrender.com").replace(/\/\$/, "");
 
 const Home = () => {
   const navigate = useNavigate(); 
@@ -21,24 +20,25 @@ const Home = () => {
   const [username, setUsername] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   
+  // 💡 ADDED: State variable to track the token directly inside the application memory loop
+  const [sessionToken, setSessionToken] = useState("");
+
   useEffect(() => {
     const verifyUserSession = async () => {
       const urlParams = new URLSearchParams(window.location.search);
       const tokenFromUrl = urlParams.get("token");
 
-      if (tokenFromUrl) {
-        localStorage.setItem("token", tokenFromUrl);
-        setCookie("token", tokenFromUrl, { 
-          path: "/", 
-          sameSite: "none", 
-          secure: true, 
-          maxAge: 24 * 60 * 60 
-        });
-        
-        window.history.replaceState({}, document.title, window.location.pathname);
-      }
+      // 💡 Determine active token without relying purely on browser storage layers
+      const activeToken = tokenFromUrl || cookies.token || localStorage.getItem("token") || sessionToken;
 
-      const activeToken = cookies.token || localStorage.getItem("token") || tokenFromUrl;
+      if (tokenFromUrl) {
+        setSessionToken(tokenFromUrl);
+        // Try saving as fallback, even if browser filters flag it
+        localStorage.setItem("token", tokenFromUrl);
+        setCookie("token", tokenFromUrl, { path: "/", sameSite: "none", secure: true, maxAge: 24 * 60 * 60 });
+        
+        // Keep the token in the URL for now so refreshes don't drop the verification state
+      }
 
       if (!activeToken) {
         console.log("🔒 Access denied: Missing token string.");
@@ -75,7 +75,7 @@ const Home = () => {
     };
 
     verifyUserSession();
-  }, [navigate, removeCookie, cookies.token]); 
+  }, [location.search, cookies.token, removeCookie]); // 💡 Listens directly to URL string parameter modifications
 
   const handleLogout = () => {
     removeCookie("token", { path: "/" });
@@ -84,11 +84,8 @@ const Home = () => {
   };
 
   const getLinkClass = (path) => {
+    // Preserve the URL query string token when shifting menu selections
     return location.pathname === path ? "nav-link active-tab" : "nav-link";
-  };
-
-  const handleNavClick = () => {
-    setIsMenuOpen(false); 
   };
 
   if (loading) {
@@ -106,7 +103,8 @@ const Home = () => {
     <div className="dashboard-root-layout">
       <nav className="dashboard-navbar shadow-sm">
         <div className="nav-container-wrapper">
-          <Link to="/" className="nav-brand-logo" onClick={handleNavClick}>
+          {/* 💡 Appended search location string parameter flags to nested links */}
+          <Link to={`/${location.search}`} className="nav-brand-logo" onClick={handleNavClick}>
             Kite Clone
           </Link>
           <button 
@@ -119,12 +117,12 @@ const Home = () => {
             <span className="bar"></span>
           </button>
           <div className={`nav-links-menu-box ${isMenuOpen ? "mobile-open" : ""}`}>
-            <Link to="/" className={getLinkClass("/")} onClick={handleNavClick}>Dashboard</Link>
-            <Link to="/orders" className={getLinkClass("/orders")} onClick={handleNavClick}>Orders</Link>
-            <Link to="/holdings" className={getLinkClass("/holdings")} onClick={handleNavClick}>Holdings</Link>
-            <Link to="/positions" className={getLinkClass("/positions")} onClick={handleNavClick}>Positions</Link>
-            <Link to="/funds" className={getLinkClass("/funds")} onClick={handleNavClick}>Funds</Link>
-            <Link to="/apps" className={getLinkClass("/apps")} onClick={handleNavClick}>Apps</Link>
+            <Link to={`/${location.search}`} className={getLinkClass("/")}>Dashboard</Link>
+            <Link to={`/orders${location.search}`} className={getLinkClass("/orders")}>Orders</Link>
+            <Link to={`/holdings${location.search}`} className={getLinkClass("/holdings")}>Holdings</Link>
+            <Link to={`/positions${location.search}`} className={getLinkClass("/positions")}>Positions</Link>
+            <Link to={`/funds${location.search}`} className={getLinkClass("/funds")}>Funds</Link>
+            <Link to={`/apps${location.search}`} className={getLinkClass("/apps")}>Apps</Link>
             <span className="nav-username-display">Hi, {username}!</span>
             <button onClick={handleLogout} className="btn-logout-desktop">Logout</button>
           </div>

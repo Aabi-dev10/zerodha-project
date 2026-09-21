@@ -40,8 +40,14 @@ const Login = () => {
         { withCredentials: true },
       );
       console.log(data);
-      const { success, message } = data;
+      const { success, message, token } = data; // 💡 UPDATED: Added token destructuring
+      
       if (success) {
+        // 🔒 CRITICAL FIX: Save the token locally so Chrome cross-origin limits don't wipe it
+        if (token) {
+          localStorage.setItem("token", token);
+        }
+        
         handleSuccess(message);
         setTimeout(() => {
           navigate("/");
@@ -76,19 +82,23 @@ const Login = () => {
             onChange={handleOnChange}
             className="form-control border-primary w-100 p-3 text-center"
             id="emailInput"
+            autoComplete="username" // 💡 Resolves Chrome autocomplete warning
             required
           />
         </div>
         <div>
-          <label htmlFor="password" className="form-label border border-primary">
-            Password
+          <label htmlFor="passwordInput" className="form-label">
+            Password:
           </label>
           <input
+            id="passwordInput"
             type="password"
             name="password"
             value={password}
             placeholder="Enter your password"
             onChange={handleOnChange}
+            autoComplete="current-password" // 💡 Resolves Chrome autocomplete warning
+            required
           />
         </div>
         <button type="submit">Submit</button>

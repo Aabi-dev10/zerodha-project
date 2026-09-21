@@ -5,10 +5,9 @@ import axios from "axios";
 
 import Dashboard from "./Dashboard.jsx"; 
 
-// Set withCredentials globally so Axios forces the browser to send cross-domain cookies
 axios.defaults.withCredentials = true;
 
-// Clean out any loose slashes from your environment variables automatically
+// 💡 FIX: Standardized cleaner syntax to prevent layout path breaks
 const BACKEND_URL = (import.meta.env.VITE_API_URL || "http://localhost:8080").replace(/\/\$/, "");
 const FRONTEND_URL = (import.meta.env.VITE_FRONTEND_URL || "http://localhost:5173").replace(/\/\$/, "");
 
@@ -16,7 +15,6 @@ const Home = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // 💡 UPDATED: Added setCookie here so we can write the crossed-over token locally
   const [cookies, setCookie, removeCookie] = useCookies(["token"]);
   const [loading, setLoading] = useState(true);
   
@@ -25,25 +23,26 @@ const Home = () => {
   
   useEffect(() => {
     const verifyUserSession = async () => {
-      // 1. 💡 ADDED: Check if a token was passed through the secure URL parameter string
       const urlParams = new URLSearchParams(window.location.search);
       const tokenFromUrl = urlParams.get("token");
 
       if (tokenFromUrl) {
-        // Securely capture and save the token inside the dashboard's local domain memory
+        localStorage.setItem("token", tokenFromUrl);
         setCookie("token", tokenFromUrl, { 
           path: "/", 
           sameSite: "none", 
-          secure: true, // Crucial for production HTTPS on Render
+          secure: true, 
           maxAge: 24 * 60 * 60 
         });
         
-        // Wipe the token parameter from the address bar instantly for visual neatness
         window.history.replaceState({}, document.title, window.location.pathname);
       }
 
-      // 2. Safety lock: If there's no local cookie and no fresh link token, redirect back to login
-      if (!cookies.token && !tokenFromUrl) {
+      // 💡 FIX: Check cookies first, then check local fallback storage context
+      const activeToken = cookies.token || localStorage.getItem("token") || tokenFromUrl;
+
+      // 2. Safety lock: If there's no token anywhere, redirect back to login
+      if (!activeToken) {
         window.location.href = `${FRONTEND_URL}/login`;
         return;
       }
@@ -52,7 +51,10 @@ const Home = () => {
         const { data } = await axios.post(
           `${BACKEND_URL}/`, 
           {},
-          { withCredentials: true } 
+          { 
+            headers: { Authorization: `Bearer ${activeToken}` }, // 💡 Attached the header fallback
+            withCredentials: true 
+          } 
         );
         
         const { status, user } = data;
@@ -62,11 +64,13 @@ const Home = () => {
           setLoading(false);
         } else {
           removeCookie("token", { path: "/" });
+          localStorage.removeItem("token");
           window.location.href = `${FRONTEND_URL}/login`;
         }
       } catch (error) {
         console.error("Dashboard session mounting verification failed:", error);
         removeCookie("token", { path: "/" });
+        localStorage.removeItem("token");
         window.location.href = `${FRONTEND_URL}/login`;
       }
     };
@@ -76,7 +80,8 @@ const Home = () => {
 
   const handleLogout = () => {
     removeCookie("token", { path: "/" });
-    window.location.href = `${FRONTEND_URL}/`; 
+    localStorage.removeItem("token"); // 💡 Clear on logout
+    window.location.href = `${FRONTEND_URL}/login`; 
   };
 
   const getLinkClass = (path) => {
@@ -100,7 +105,6 @@ const Home = () => {
 
   return (
     <div className="dashboard-root-layout">
-      {/*nav bar*/}
       <nav className="dashboard-navbar shadow-sm">
         <div className="nav-container-wrapper">
           <Link to="/" className="nav-brand-logo" onClick={handleNavClick}>

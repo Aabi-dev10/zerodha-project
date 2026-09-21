@@ -7,12 +7,10 @@ import Dashboard from "./Dashboard.jsx";
 
 axios.defaults.withCredentials = true;
 
-// 💡 FIXED: The regex pattern is corrected to cleanly strip trailing slashes
 const BACKEND_URL = (import.meta.env.VITE_API_URL || "http://localhost:8080").replace(/\/\$/, "");
-const FRONTEND_URL = (import.meta.env.VITE_FRONTEND_URL || "http://localhost:5173").replace(/\/\$/, "");
 
 const Home = () => {
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // 💡 Standardized React routing hook
   const location = useLocation();
   
   const [cookies, setCookie, removeCookie] = useCookies(["token"]);
@@ -38,12 +36,13 @@ const Home = () => {
         window.history.replaceState({}, document.title, window.location.pathname);
       }
 
-      // Check cookies first, then check local fallback storage context
+      // Read fallback token memory 
       const activeToken = cookies.token || localStorage.getItem("token") || tokenFromUrl;
 
-      // 2. Safety lock: If there's no token anywhere, redirect back to login
+      // 💡 THE FIX: Use navigate("/login") instead of window.location.href
       if (!activeToken) {
-        window.location.href = `${FRONTEND_URL}/login`;
+        console.log("🔒 Access denied: Missing token string.");
+        navigate("/login");
         return;
       }
     
@@ -52,7 +51,7 @@ const Home = () => {
           `${BACKEND_URL}/`, 
           {},
           { 
-            headers: { Authorization: `Bearer ${activeToken}` }, // Attached the header fallback
+            headers: { Authorization: `Bearer ${activeToken}` },
             withCredentials: true 
           } 
         );
@@ -65,23 +64,23 @@ const Home = () => {
         } else {
           removeCookie("token", { path: "/" });
           localStorage.removeItem("token");
-          window.location.href = `${FRONTEND_URL}/login`;
+          navigate("/login");
         }
       } catch (error) {
         console.error("Dashboard session mounting verification failed:", error);
         removeCookie("token", { path: "/" });
         localStorage.removeItem("token");
-        window.location.href = `${FRONTEND_URL}/login`;
+        navigate("/login");
       }
     };
 
     verifyUserSession();
-  }, [cookies.token, removeCookie]);
+  }, [cookies.token, removeCookie, navigate]);
 
   const handleLogout = () => {
     removeCookie("token", { path: "/" });
-    localStorage.removeItem("token"); // Clear on logout
-    window.location.href = `${FRONTEND_URL}/login`; 
+    localStorage.removeItem("token"); 
+    navigate("/login"); 
   };
 
   const getLinkClass = (path) => {
@@ -126,12 +125,8 @@ const Home = () => {
             <Link to="/positions" className={getLinkClass("/positions")} onClick={handleNavClick}>Positions</Link>
             <Link to="/funds" className={getLinkClass("/funds")} onClick={handleNavClick}>Funds</Link>
             <Link to="/apps" className={getLinkClass("/apps")} onClick={handleNavClick}>Apps</Link>
-            <span className="nav-username-display">
-              Hi, {username}!
-            </span>
-            <button onClick={handleLogout} className="btn-logout-desktop">
-              Logout
-            </button>
+            <span className="nav-username-display">Hi, {username}!</span>
+            <button onClick={handleLogout} className="btn-logout-desktop">Logout</button>
           </div>
         </div>
       </nav>

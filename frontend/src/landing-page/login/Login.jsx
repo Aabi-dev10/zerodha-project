@@ -1,15 +1,18 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom"; // 💡 Cleaned up unused useNavigate hook
 import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 
+// 💡 Dynamically resolve your deployed dashboard domain or fall back to local development ports
+const DASHBOARD_URL = (import.meta.env.VITE_DASHBOARD_URL || "http://localhost:5173").replace(/\/\$/, "");
+
 const Login = () => {
-  const navigate = useNavigate();
   const [inputValue, setInputValue] = useState({
     email: "",
     password: "",
   });
   const { email, password } = inputValue;
+  
   const handleOnChange = (e) => {
     const { name, value } = e.target;
     setInputValue({
@@ -22,6 +25,7 @@ const Login = () => {
     toast.error(err, {
       position: "bottom-left",
     });
+    
   const handleSuccess = (msg) =>
     toast.success(msg, {
       position: "bottom-left",
@@ -39,18 +43,23 @@ const Login = () => {
         },
         { withCredentials: true },
       );
+      
       console.log(data);
-      const { success, message, token } = data; // 💡 UPDATED: Added token destructuring
+      const { success, message, token } = data;
       
       if (success) {
-        // 🔒 CRITICAL FIX: Save the token locally so Chrome cross-origin limits don't wipe it
+        // 🔒 Save the token locally to circumvent Chrome cross-origin constraints
         if (token) {
           localStorage.setItem("token", token);
         }
         
         handleSuccess(message);
+        
         setTimeout(() => {
-          navigate("/");
+          // 💡 THE ARCHITECTURAL FIX: 
+          // Instead of navigating inside the public app, jump domains to the dashboard app
+          // Passing the token as a URL param ensures the dashboard application can intercept it immediately
+          window.location.href = `${DASHBOARD_URL}/?token=${token}`;
         }, 1000);
       } else {
         handleError(message);
@@ -59,8 +68,8 @@ const Login = () => {
       console.log(error);
       handleError("Unable to connect to the authentication server.");
     }
+    
     setInputValue({
-      ...inputValue,
       email: "",
       password: "",
     });
@@ -82,11 +91,11 @@ const Login = () => {
             onChange={handleOnChange}
             className="form-control border-primary w-100 p-3 text-center"
             id="emailInput"
-            autoComplete="username" // 💡 Resolves Chrome autocomplete warning
+            autoComplete="username" 
             required
           />
         </div>
-        <div>
+        <div className="mb-3">
           <label htmlFor="passwordInput" className="form-label">
             Password:
           </label>
@@ -97,12 +106,13 @@ const Login = () => {
             value={password}
             placeholder="Enter your password"
             onChange={handleOnChange}
-            autoComplete="current-password" // 💡 Resolves Chrome autocomplete warning
+            className="form-control border-primary w-100 p-3 text-center"
+            autoComplete="current-password" 
             required
           />
         </div>
-        <button type="submit">Submit</button>
-        <span>
+        <button type="submit" className="btn btn-primary w-100 p-3">Submit</button>
+        <span className="d-block mt-3 text-center">
           Already have an account? <Link to={"/signup"}>Signup</Link>
         </span>
       </form>

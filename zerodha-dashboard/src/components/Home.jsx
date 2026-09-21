@@ -7,8 +7,9 @@ import Dashboard from "./Dashboard.jsx";
 
 axios.defaults.withCredentials = true;
 
-// 💡 FIXED: Corrected regex statement format to reliably clear trailing slashes from environment URLs
+// 💡 Ensure these point to the clean domains without trailing slashes
 const BACKEND_URL = (import.meta.env.VITE_API_URL || "http://localhost:8080").replace(/\/\$/, "");
+const FRONTEND_URL = (import.meta.env.VITE_FRONTEND_URL || "https://onrender.com").replace(/\/\$/, "");
 
 const Home = () => {
   const navigate = useNavigate(); 
@@ -21,14 +22,6 @@ const Home = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   
   useEffect(() => {
-    // 💡 THE ULTIMATE ROUTE GUARD BYPASS FIX: 
-    // If the browser route hits /login or /signup, break execution instantly!
-    // This allows the public login pages to render instead of locking the browser in a validation check loop.
-    if (location.pathname === "/login" || location.pathname === "/signup") {
-      setLoading(false);
-      return;
-    }
-
     const verifyUserSession = async () => {
       const urlParams = new URLSearchParams(window.location.search);
       const tokenFromUrl = urlParams.get("token");
@@ -45,12 +38,13 @@ const Home = () => {
         window.history.replaceState({}, document.title, window.location.pathname);
       }
 
-      // Read fallback token memory 
+      // Check cookies first, then check local fallback storage context
       const activeToken = cookies.token || localStorage.getItem("token") || tokenFromUrl;
 
+      // 💡 THE FIX: If there's no token, redirect out to the independent Login landing page URL
       if (!activeToken) {
         console.log("🔒 Access denied: Missing token string.");
-        navigate("/login");
+        window.location.href = `${FRONTEND_URL}/login`;
         return;
       }
     
@@ -72,24 +66,23 @@ const Home = () => {
         } else {
           removeCookie("token", { path: "/" });
           localStorage.removeItem("token");
-          navigate("/login");
+          window.location.href = `${FRONTEND_URL}/login`;
         }
       } catch (error) {
         console.error("Dashboard session mounting verification failed:", error);
         removeCookie("token", { path: "/" });
         localStorage.removeItem("token");
-        navigate("/login");
+        window.location.href = `${FRONTEND_URL}/login`;
       }
     };
 
     verifyUserSession();
-    // 💡 FIXED: Cleaned array properties to prevent state refresh loop crashes
-  }, [location.pathname, navigate, removeCookie]); 
+  }, [navigate, removeCookie, cookies.token]); 
 
   const handleLogout = () => {
     removeCookie("token", { path: "/" });
-    localStorage.removeItem("token"); 
-    navigate("/login"); 
+    localStorage.removeItem("token");
+    window.location.href = `${FRONTEND_URL}/login`; 
   };
 
   const getLinkClass = (path) => {
@@ -99,12 +92,6 @@ const Home = () => {
   const handleNavClick = () => {
     setIsMenuOpen(false); 
   };
-
-  // 💡 SAFETY CHECK: If navigating to login or signup, render absolutely nothing 
-  // here so that the public component routes in main.jsx/index.jsx take over smoothly.
-  if (location.pathname === "/login" || location.pathname === "/signup") {
-    return null;
-  }
 
   if (loading) {
     return (

@@ -17,8 +17,8 @@ const PORT = process.env.PORT || 8080;
 const uri = process.env.MONGO_URL;
 
 const ALLOWED_ORIGINS = [
-  "https://zerodha-frontend-main.onrender.com", 
-  "https://zerodha-dashboard-app.onrender.com", 
+ "https://zerodha-frontend-main.onrender.com",
+  "https://zerodha-dashboard-app.onrender.com",
   "http://localhost:5174", 
   "http://localhost:5173"  
 ];

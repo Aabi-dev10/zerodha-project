@@ -7,8 +7,11 @@ import Dashboard from "./Dashboard.jsx";
 
 axios.defaults.withCredentials = true;
 
-const BACKEND_URL = "https://onrender.com";
-const FRONTEND_URL = "https://onrender.com";
+// 💡 THE ULTIMATE BUILD OVERRIDE:
+// We read your Vite env settings first, but provide your exact absolute Render production 
+// domains as hardcoded fallbacks so tracking mitigations can never drop your paths.
+const BACKEND_URL = (import.meta.env.VITE_API_URL || "https://zerodha-project-byag.onrender.com").replace(/\/+\$/, "");
+const FRONTEND_URL = (import.meta.env.VITE_FRONTEND_URL || "https://zerodha-frontend-main.onrender.com").replace(/\/+\$/, "");
 
 const Home = () => {
   const navigate = useNavigate(); 
@@ -19,29 +22,28 @@ const Home = () => {
   
   const [username, setUsername] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  
+
   useEffect(() => {
     const verifyUserSession = async () => {
-      // 🕵️ DEBUG LOG 1: Check what parameters exist in the current URL path string
-      console.log("Current Full URL Path:", window.location.href);
       const urlParams = new URLSearchParams(window.location.search);
       const tokenFromUrl = urlParams.get("token");
-      console.log("Token extracted from URL search parameters:", tokenFromUrl);
 
+      // Synchronize token state data into local application context immediately
       if (tokenFromUrl) {
         localStorage.setItem("token", tokenFromUrl);
-        setCookie("token", tokenFromUrl, { path: "/", sameSite: "none", secure: true, maxAge: 24 * 60 * 60 });
+        setCookie("token", tokenFromUrl, { 
+          path: "/", 
+          sameSite: "none", 
+          secure: true, 
+          maxAge: 24 * 60 * 60 
+        });
       }
 
-      // Check fallback tracking positions
-      const localToken = localStorage.getItem("token");
-      const cookieToken = cookies.token;
-      
-      const activeToken = tokenFromUrl || cookieToken || localToken;
+      // Check fallback cookie tracking positions alongside local browser memory layers
+      const activeToken = tokenFromUrl || cookies.token || localStorage.getItem("token");
 
-      // 💡 THE SAFETY TRAP: If it lacks a token, alert us before bouncing away!
       if (!activeToken) {
-        alert(`❌ DASHBOARD BLOCKED: No authentication token found anywhere!\n\nCookie Token: ${cookieToken}\nLocalStorage Token: ${localToken}\nURL Token: ${tokenFromUrl}`);
+        console.log("🔒 Access denied: Missing token string.");
         window.location.href = `${FRONTEND_URL}/login`;
         return;
       }
@@ -62,13 +64,11 @@ const Home = () => {
           setUsername(user);
           setLoading(false);
         } else {
-          alert(`❌ BACKEND REJECTED SESSION: Status returned false.\nMessage: ${data.message || 'No message'}`);
           removeCookie("token", { path: "/" });
           localStorage.removeItem("token");
           window.location.href = `${FRONTEND_URL}/login`;
         }
       } catch (error) {
-        alert(`❌ API COMMUNICATION CRASHED:\n${error.message}`);
         console.error("Dashboard session mounting verification failed:", error);
         removeCookie("token", { path: "/" });
         localStorage.removeItem("token");
@@ -77,16 +77,64 @@ const Home = () => {
     };
 
     verifyUserSession();
-  }, [navigate, removeCookie, cookies.token]); 
+  }, [navigate, removeCookie, cookies.token, location.search]); 
 
-  // Rest of your menu rendering layout remains completely identical...
+  const handleLogout = () => {
+    removeCookie("token", { path: "/" });
+    localStorage.removeItem("token");
+    window.location.href = `${FRONTEND_URL}/login`; 
+  };
+
+  const getLinkClass = (path) => {
+    return location.pathname === path ? "nav-link active-tab" : "nav-link";
+  };
+
+  const handleNavClick = () => {
+    setIsMenuOpen(false); 
+  };
+
   if (loading) {
-    return <div className="text-center mt-5"><h3>Loading your trading profile...</h3></div>;
+    return (
+      <div className="text-center mt-5" style={{ fontFamily: "sans-serif" }}>
+        <h3>Loading your trading profile...</h3>
+        <p style={{ color: "#9b9b9b", fontSize: "14px" }}>
+          Connecting to secure server environment. This can take up to 50 seconds on first launch.
+        </p>
+      </div>
+    );
   }
 
   return (
     <div className="dashboard-root-layout">
-      <div className="p-3"><Dashboard username={username} /></div>
+      <nav className="dashboard-navbar shadow-sm">
+        <div className="nav-container-wrapper">
+          <Link to="/" className="nav-brand-logo" onClick={handleNavClick}>
+            Kite Clone
+          </Link>
+          <button 
+            className={`hamburger-menu-btn ${isMenuOpen ? "is-active" : ""}`}
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            aria-label="Toggle navigation menu"
+          >
+            <span className="bar"></span>
+            <span className="bar"></span>
+            <span className="bar"></span>
+          </button>
+          <div className={`nav-links-menu-box ${isMenuOpen ? "mobile-open" : ""}`}>
+            <Link to="/" className={getLinkClass("/")} onClick={handleNavClick}>Dashboard</Link>
+            <Link to="/orders" className={getLinkClass("/orders")} onClick={handleNavClick}>Orders</Link>
+            <Link to="/holdings" className={getLinkClass("/holdings")} onClick={handleNavClick}>Holdings</Link>
+            <Link to="/positions" className={getLinkClass("/positions")} onClick={handleNavClick}>Positions</Link>
+            <Link to="/funds" className={getLinkClass("/funds")} onClick={handleNavClick}>Funds</Link>
+            <Link to="/apps" className={getLinkClass("/apps")} onClick={handleNavClick}>Apps</Link>
+            <span className="nav-username-display">Hi, {username}!</span>
+            <button onClick={handleLogout} className="btn-logout-desktop">Logout</button>
+          </div>
+        </div>
+      </nav>
+      <div className="dashboard-main-content-window p-3">
+        <Dashboard username={username} />
+      </div>
     </div>
   );
 };

@@ -1,28 +1,30 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { useCookies } from "react-cookie"; // 💡 ADDED: For token fallback
+import { useCookies } from "react-cookie";
+import type { Position } from "../types";
 
 const Positions = () => {
-  const [allPositions, setAllPositions] = useState([]);
-  const [cookies] = useCookies(["token"]); // 💡 ADDED: Read local cookie token
+  const [allPositions, setAllPositions] = useState<Position[]>([]);
+  const [cookies] = useCookies(["token"]);
 
   useEffect(() => {
-    const baseURL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+    const baseURL: string =
+      import.meta.env.VITE_API_URL || "http://localhost:8080";
 
-    // 💡 UPDATED: Added headers configuration block to pass the Authorization token
-    axios.get(`${baseURL}/allPositions`, { 
-      withCredentials: true,
-      headers: {
-        Authorization: `Bearer ${cookies.token}`
-      }
-    })
+    axios
+      .get<Position[]>(`${baseURL}/allPositions`, {
+        withCredentials: true,
+        headers: {
+          Authorization: `Bearer ${cookies.token}`,
+        },
+      })
       .then((res) => {
         setAllPositions(res.data);
       })
-      .catch((err) => {
+      .catch((err: unknown) => {
         console.error("Error fetching live trading positions:", err);
       });
-  }, [cookies.token]); // 💡 ADDED: Depend on cookie token state changes
+  }, [cookies.token]);
 
   return (
     <>
@@ -42,13 +44,13 @@ const Positions = () => {
             </tr>
           </thead>
           <tbody>
-            {allPositions.map((stock, index) => {
+            {allPositions.map((stock: Position, index: number) => {
               const qty = stock.qty || 0;
               const avg = stock.avg || 0;
               const price = stock.price || 0;
 
               const curValue = price * qty;
-              const pnl = curValue - (avg * qty);
+              const pnl = curValue - avg * qty;
               const isProfit = pnl >= 0.0;
               const profClass = isProfit ? "profit" : "loss";
               const dayClass = stock.isLoss ? "loss" : "profit";

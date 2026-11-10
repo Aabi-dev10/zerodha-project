@@ -1,9 +1,5 @@
 import React, { useState, useContext } from "react";
 
-import axios from "axios";
-
-import GeneralContext from "./GeneralContext.jsx";
-
 import { Tooltip, Grow } from "@mui/material";
 
 import {
@@ -13,10 +9,12 @@ import {
   MoreHoriz,
 } from "@mui/icons-material";
 
-import { watchlist } from "../data/data (2).jsx";
+import GeneralContext from "./GeneralContext";
+import { watchlist } from "../data/data";
 import { DoughnutChart } from "./DoughnoutChart";
+import type { Stock } from "../types";
 
-const labels = watchlist.map((subArray) => subArray["name"]);
+const labels: string[] = watchlist.map((stock: Stock) => stock.name);
 
 const WatchList = () => {
   const data = {
@@ -24,7 +22,7 @@ const WatchList = () => {
     datasets: [
       {
         label: "Price",
-        data: watchlist.map((stock) => stock.price),
+        data: watchlist.map((stock: Stock) => stock.price),
         backgroundColor: [
           "rgba(255, 99, 132, 0.5)",
           "rgba(54, 162, 235, 0.5)",
@@ -60,9 +58,9 @@ const WatchList = () => {
       </div>
 
       <ul className="list">
-        {watchlist.map((stock, index) => {
-          return <WatchListItem stock={stock} key={index} />;
-        })}
+        {watchlist.map((stock: Stock) => (
+          <WatchListItem stock={stock} key={stock.name} />
+        ))}
       </ul>
 
       <DoughnutChart data={data} />
@@ -72,16 +70,21 @@ const WatchList = () => {
 
 export default WatchList;
 
-const WatchListItem = ({ stock }) => {
-  const [showWatchlistActions, setShowWatchlistActions] = useState(false);
+type WatchListItemProps = {
+  stock: Stock;
+};
 
-  const handleMouseEnter = (e) => {
+const WatchListItem = ({ stock }: WatchListItemProps) => {
+  const [showWatchlistActions, setShowWatchlistActions] =
+    useState<boolean>(false);
+
+  const handleMouseEnter = (): void => {
     setShowWatchlistActions(true);
   };
 
-  const handleMouseLeave = (e) => {
+  const handleMouseLeave = (): void => {
     setShowWatchlistActions(false);
-};
+  };
 
   return (
     <li onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
@@ -92,7 +95,7 @@ const WatchListItem = ({ stock }) => {
           {stock.isDown ? (
             <KeyboardArrowDown className="down" />
           ) : (
-            <KeyboardArrowUp className="down" />
+            <KeyboardArrowUp className="up" />
           )}
           <span className="price">{stock.price}</span>
         </div>
@@ -102,15 +105,19 @@ const WatchListItem = ({ stock }) => {
   );
 };
 
-const WatchListActions = ({ uid }) => {
+type WatchListActionsProps = {
+  uid: string;
+};
+
+const WatchListActions = ({ uid }: WatchListActionsProps) => {
   const { openBuyWindow, openSellWindow } = useContext(GeneralContext);
 
-  const handleBuyClick = (e) => {
+  const handleBuyClick = (e: React.MouseEvent<HTMLButtonElement>): void => {
     e.stopPropagation();
     openBuyWindow(uid);
   };
 
-  const handleSellClick = (e) => {
+  const handleSellClick = (e: React.MouseEvent<HTMLButtonElement>): void => {
     e.stopPropagation();
     openSellWindow(uid);
   };
@@ -118,14 +125,14 @@ const WatchListActions = ({ uid }) => {
   return (
     <span className="actions">
       <span>
-        
         {/* 1. Buy Tooltip */}
         <Tooltip
           title="Buy (B)"
           placement="top"
           arrow
           slots={{ transition: Grow }}
-        >          <div style={{ display: 'inline-block' }}>
+        >
+          <div style={{ display: "inline-block" }}>
             <button className="buy" onClick={handleBuyClick}>
               Buy
             </button>
@@ -139,7 +146,7 @@ const WatchListActions = ({ uid }) => {
           arrow
           slots={{ transition: Grow }}
         >
-          <div style={{ display: 'inline-block' }}>
+          <div style={{ display: "inline-block" }}>
             <button className="sell" onClick={handleSellClick}>
               Sell
             </button>
@@ -153,7 +160,7 @@ const WatchListActions = ({ uid }) => {
           arrow
           slots={{ transition: Grow }}
         >
-          <div style={{ display: 'inline-block' }}>
+          <div style={{ display: "inline-block" }}>
             <button className="action">
               <BarChartOutlined className="icon" />
             </button>
@@ -161,19 +168,18 @@ const WatchListActions = ({ uid }) => {
         </Tooltip>
 
         {/* 4. More Tooltip */}
-        <Tooltip 
-          title="More" 
-          placement="top" 
-          arrow 
+        <Tooltip
+          title="More"
+          placement="top"
+          arrow
           slots={{ transition: Grow }}
         >
-          <div style={{ display: 'inline-block' }}>
+          <div style={{ display: "inline-block" }}>
             <button className="action">
               <MoreHoriz className="icon" />
             </button>
           </div>
         </Tooltip>
-
       </span>
     </span>
   );

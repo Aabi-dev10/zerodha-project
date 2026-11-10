@@ -1,34 +1,36 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { useCookies } from "react-cookie"; // 💡 ADDED: For token fallback
-import { VerticalGraph } from "./VerticalGraph.jsx";
+import { useCookies } from "react-cookie";
+import { VerticalGraph } from "./VerticalGraph";
+import type { Holding } from "../types";
 
 const Holdings = () => {
-  const [allHoldings, setAllHoldings] = useState([]);
-  const [cookies] = useCookies(["token"]); // 💡 ADDED: Read local cookie token
+  const [allHoldings, setAllHoldings] = useState<Holding[]>([]);
+  const [cookies] = useCookies(["token"]);
 
   useEffect(() => {
-    const baseURL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+    const baseURL: string =
+      import.meta.env.VITE_API_URL || "http://localhost:8080";
 
-    // 💡 UPDATED: Added headers configuration block to pass the Authorization token
-    axios.get(`${baseURL}/allHoldings`, { 
-      withCredentials: true,
-      headers: {
-        Authorization: `Bearer ${cookies.token}`
-      }
-    }) 
+    axios
+      .get<Holding[]>(`${baseURL}/allHoldings`, {
+        withCredentials: true,
+        headers: {
+          Authorization: `Bearer ${cookies.token}`,
+        },
+      })
       .then((res) => {
         setAllHoldings(res.data);
       })
-      .catch((err) => {
+      .catch((err: unknown) => {
         console.error("Error fetching holdings:", err);
       });
-  }, [cookies.token]); // 💡 ADDED: Depend on cookie token state changes
+  }, [cookies.token]);
 
   let totalInvestment = 0;
   let totalCurrentValue = 0;
 
-  allHoldings.forEach((stock) => {
+  allHoldings.forEach((stock: Holding) => {
     const qty = stock.qty || 0;
     const avg = stock.avg || 0;
     const price = stock.price || 0;
@@ -36,16 +38,21 @@ const Holdings = () => {
     totalInvestment += avg * qty;
     totalCurrentValue += price * qty;
   });
+
   const totalPnL = totalCurrentValue - totalInvestment;
-  const pnlPercent = totalInvestment > 0 ? (totalPnL / totalInvestment) * 100 : 0;
+  const pnlPercent =
+    totalInvestment > 0 ? (totalPnL / totalInvestment) * 100 : 0;
   const overallPnLClass = totalPnL >= 0 ? "profit" : "loss";
-  const labels = allHoldings.map((stock) => stock.name || "Unknown");
+
+  const labels: string[] = allHoldings.map(
+    (stock: Holding) => stock.name || "Unknown"
+  );
   const data = {
     labels,
     datasets: [
       {
         label: "Stock Price",
-        data: allHoldings.map((stock) => stock.price || 0),
+        data: allHoldings.map((stock: Holding) => stock.price || 0),
         backgroundColor: "rgba(255, 99, 132, 0.5)",
       },
     ],
@@ -70,13 +77,13 @@ const Holdings = () => {
             </tr>
           </thead>
           <tbody>
-            {allHoldings.map((stock, index) => {
+            {allHoldings.map((stock: Holding, index: number) => {
               const qty = stock.qty || 0;
               const avg = stock.avg || 0;
               const price = stock.price || 0;
 
               const curValue = price * qty;
-              const pnl = curValue - (avg * qty);
+              const pnl = curValue - avg * qty;
               const isProfit = pnl >= 0.0;
               const profClass = isProfit ? "profit" : "loss";
               const dayClass = stock.isLoss ? "loss" : "profit";
@@ -97,28 +104,39 @@ const Holdings = () => {
           </tbody>
         </table>
       </div>
+
       <div className="row">
         <div className="col">
           <h5>
             {Math.floor(totalInvestment).toLocaleString()}.
-            <span>{Math.round((totalInvestment % 1) * 100).toString().padStart(2, "0")}</span>
+            <span>
+              {Math.round((totalInvestment % 1) * 100)
+                .toString()
+                .padStart(2, "0")}
+            </span>
           </h5>
           <p>Total investment</p>
         </div>
         <div className="col">
           <h5>
             {Math.floor(totalCurrentValue).toLocaleString()}.
-            <span>{Math.round((totalCurrentValue % 1) * 100).toString().padStart(2, "0")}</span>
+            <span>
+              {Math.round((totalCurrentValue % 1) * 100)
+                .toString()
+                .padStart(2, "0")}
+            </span>
           </h5>
           <p>Current value</p>
         </div>
         <div className="col">
           <h5 className={overallPnLClass}>
-            {totalPnL.toFixed(2)} ({pnlPercent >= 0 ? "+" : ""}{pnlPercent.toFixed(2)}%)
+            {totalPnL.toFixed(2)} ({pnlPercent >= 0 ? "+" : ""}
+            {pnlPercent.toFixed(2)}%)
           </h5>
           <p>P&L</p>
         </div>
       </div>
+
       <VerticalGraph data={data} />
     </>
   );
